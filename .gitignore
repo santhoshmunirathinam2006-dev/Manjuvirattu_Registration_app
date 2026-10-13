@@ -205,3 +205,41 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Next.js Build Output
+.next/
+out/
+
+# Production Build Logs
+build/
+
+# Debug and System Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment Variables & Local Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env.bak
+
+# Prisma Local Database/SQLite (if applicable)
+# Uncomment the line below if you are using a local SQLite file in your prisma folder
+# prisma/*.db
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# IDE / Code Editors
+.vscode/
+.idea/
