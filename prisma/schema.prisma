@@ -1,0 +1,147 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Turf {
+  id                 String         @id @default(uuid())
+  name               String
+  adminName          String
+  adminPhone         String
+  courtAddress       String
+  adminAddress       String
+  insideImagesJson   String         // JSON array of 4 image URLs
+  outsideImagesJson  String         // JSON array of 4 image URLs
+  numCourts          Int            @default(4)
+  courtDimensions    String         @default("44 ft x 20 ft (BWF Standard)")
+  hasDrinkingWater   Boolean        @default(true)
+  numFans            Int            @default(8)
+  hasChairs          Boolean        @default(true)
+  hasNearbyJuiceShop Boolean        @default(true)
+  hasShuttlecocks    Boolean        @default(true)
+  shuttlecockCost    Float          @default(50.0)
+  defaultOpenTime    String         @default("09:00")
+  defaultCloseTime   String         @default("01:00")
+  pricePerHour       Float          @default(450.0)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  courts             Court[]
+  blockedRanges      BlockedRange[]
+}
+
+model Court {
+  id            String         @id @default(uuid())
+  turfId        String
+  turf          Turf           @relation(fields: [turfId], references: [id], onDelete: Cascade)
+  courtNumber   String         // e.g. "Court 1", "Court 2"
+  surfaceType   String         @default("BWF Approved Synthetic Mat")
+  dimensions    String         @default("44 ft x 20 ft")
+  isActive      Boolean        @default(true)
+
+  slots         Slot[]
+  blockedRanges BlockedRange[]
+}
+
+model Slot {
+  id                 String    @id @default(uuid())
+  courtId            String
+  court              Court     @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  date               String    // YYYY-MM-DD
+  startTime          String    // e.g. "09:00"
+  endTime            String    // e.g. "10:00"
+  price              Float     @default(450.0)
+  status             String    @default("AVAILABLE") // AVAILABLE, BOOKED, BLOCKED
+  blockReason        String?
+  lastUpdatedByAdmin DateTime  @default(now())
+
+  booking            Booking?
+}
+
+model BlockedRange {
+  id            String    @id @default(uuid())
+  turfId        String?
+  turf          Turf?     @relation(fields: [turfId], references: [id], onDelete: Cascade)
+  courtId       String?
+  court         Court?    @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  startDateTime DateTime
+  endDateTime   DateTime
+  reason        String
+  createdAt     DateTime  @default(now())
+}
+
+model Booking {
+  id              String        @id @default(uuid())
+  bookingNumber   String        @unique
+  slotId          String        @unique
+  slot            Slot          @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  bookerName      String
+  bookerPhone     String
+  totalAmount     Float
+  paymentStatus   String        @default("PENDING") // PENDING, PAID, REFUNDED
+  bookingStatus   String        @default("PENDING") // CONFIRMED, PENDING, CANCELLED
+  cancellationFee Float         @default(0.0)
+  isCancelled     Boolean       @default(false)
+  cancelledAt     DateTime?
+  refundAmount    Float         @default(0.0)
+  slotStartTime   DateTime
+  createdAt       DateTime      @default(now())
+
+  teamMembers     TeamMember[]
+}
+
+model TeamMember {
+  id               String    @id @default(uuid())
+  bookingId        String
+  booking          Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  name             String
+  phone            String
+  otp              String
+  isOtpVerified    Boolean   @default(false)
+  splitAmount      Float
+  paymentStatus    String    @default("PENDING") // PENDING, PAID, REFUNDED
+  upiTransactionId String?
+  isDefaulter      Boolean   @default(false)
+  penaltyAmount    Float     @default(0.0)
+  penaltyDeadline  DateTime?
+  createdAt        DateTime  @default(now())
+}
+
+model PartnerProfile {
+  id          String   @id @default(uuid())
+  name        String
+  phone       String   @unique
+  courtNumber String   @default("Court 1")
+  skillLevel  String   @default("Intermediate") // Beginner, Intermediate, Advanced
+  isAvailable Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+}
+
+model PartnerRequest {
+  id            String   @id @default(uuid())
+  senderName    String
+  senderPhone   String
+  senderSkill   String
+  receiverName  String
+  receiverPhone String
+  courtNumber   String
+  status        String   @default("PENDING") // PENDING, ACCEPTED, DECLINED
+  chatRoomId    String?
+  createdAt     DateTime @default(now())
+}
+
+model Report {
+  id                String   @id @default(uuid())
+  reporterName      String
+  reporterPhone     String
+  reportedUserPhone String?
+  category          String   // "Abusive Conduct", "Facility Issue", "No-Show Partner", "Payment Dispute"
+  description       String
+  status            String   @default("OPEN") // OPEN, RESOLVED
+  repliesJson       String   @default("[]")   // JSON Array of { sender, message, timestamp }
+  createdAt         DateTime @default(now())
+}
